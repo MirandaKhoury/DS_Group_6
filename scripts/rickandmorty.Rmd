@@ -1,0 +1,295 @@
+---
+title: "Rick and Morty"
+author: "Brian"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load libraries
+install.packages("RWeka")
+install.packages("ggsci")
+
+
+install.packages("magick", verbose=TRUE)
+
+library(readr)
+library(tidyverse)
+install.packages("tm")
+library(tm)
+library(wordcloud)
+library(wordcloud2)
+install.packages("tidytext")
+library(tidytext)
+library(textdata)
+library(reshape2)
+library(RWeka)
+library(knitr)
+library(gridExtra)
+library(grid)
+library(magick)
+library(igraph)
+library(ggraph)
+library("ggsci")
+library(circlize)
+library(radarchart)
+```
+
+## R Markdown
+
+
+```{r cars}
+
+
+# Read the data 
+scripts <- read_csv("RickAndMortyScripts.xls")
+
+# Read the Lexicons (for sentiment classification)
+bing <- read_csv("Bing.xls")
+nrc <- read_csv("NRC.xls")
+afinn <- read_csv("Afinn.xls")
+
+# Rename Columns
+scripts = scripts %>% rename(Index = "index",
+                   Season.No = "season no.",
+                   Episode.No = "episode no.",
+                   Episode.Name = "episode name",
+                   Character.Name = "name",
+                   Dialog = "line")
+
+
+```
+
+## Including Plots
+
+
+```{r, echo = TRUE}
+s1lines = nrow(scripts[scripts$Season.No == 1,])
+s2lines = nrow(scripts[scripts$Season.No == 2,])
+s3lines = nrow(scripts[scripts$Season.No == 3,])
+
+lines = list(s1lines, s2lines, s3lines)
+seasons = list("season 1", "Season 2", "Season 3")
+
+linesdf <- data.frame(unlist(lines), unlist(seasons))
+df = as.data.frame(linesdf)
+names(df) = c("Lines", "Season Number")
+
+p<-ggplot(data=scripts, aes(x=`Season.No`, y=nrow(scripts), color=scripts$Character.Name)) + geom_bar(stat="identity") + ggtitle("Lines per Season")
+```
+
+```{r}
+
+
+cleanCorpus <- function(text){
+  # punctuation, whitespace, lowercase, numbers
+  text.tmp <- tm_map(text, removePunctuation)
+  text.tmp <- tm_map(text.tmp, stripWhitespace)
+  text.tmp <- tm_map(text.tmp, content_transformer(tolower))
+  text.tmp <- tm_map(text.tmp, removeNumbers)
+  
+  # removes stopwords
+  stopwords_remove <- c(stopwords("en"), c("thats","weve","hes","theres","ive","im",
+                                                "will","can","cant","dont","youve","us",
+                                                "youre","youll","theyre","whats","didnt"))
+  text.tmp <- tm_map(text.tmp, removeWords, stopwords_remove)
+
+  return(text.tmp)
+}
+
+
+```
+
+```{r}
+frequentTerms <- function(text){
+  
+  # create the matrix
+  s.cor <- VCorpus(VectorSource(text))
+  s.cor.cl <- cleanCorpus(s.cor)
+  s.tdm <- TermDocumentMatrix(s.cor.cl)
+  s.tdm <- removeSparseTerms(s.tdm, 0.999)
+  m <- as.matrix(s.tdm)
+  word_freqs <- sort(rowSums(m), decreasing = T)
+  
+  # change to dataframe
+  dm <- data.frame(word=names(word_freqs), freq=word_freqs)
+  
+  return(dm)
+}
+
+# Trigram tokenizer
+tokenizer_3 <- function(x){
+  NGramTokenizer(x, Weka_control(min=3, max=3))
+}
+
+# Trigram function 
+frequentTrigrams <- function(text){
+
+  s.cor <- VCorpus(VectorSource(text))
+  s.cor.cl <- cleanCorpus(s.cor)
+  s.tdm <- TermDocumentMatrix(s.cor.cl, control=list(tokenize=tokenizer_3))
+  s.tdm <- removeSparseTerms(s.tdm, 0.999)
+  m <- as.matrix(s.tdm)
+  word_freqs <- sort(rowSums(m), decreasing=T)
+  dm <- data.frame(word=names(word_freqs), freq=word_freqs)
+  
+  return(dm)
+}
+
+tokenizer_2 <- function(x){
+  NGramTokenizer(x, Weka_control(min=2, max=2))
+}
+
+# Bigram function 
+frequentBigrams <- function(text){
+
+  s.cor <- VCorpus(VectorSource(text))
+  s.cor.cl <- cleanCorpus(s.cor)
+  s.tdm <- TermDocumentMatrix(s.cor.cl, control=list(tokenize=tokenizer_2))
+  s.tdm <- removeSparseTerms(s.tdm, 0.999)
+  m <- as.matrix(s.tdm)
+  word_freqs <- sort(rowSums(m), decreasing=T)
+  dm <- data.frame(word=names(word_freqs), freq=word_freqs)
+  
+  return(dm)
+}
+
+
+
+tokens %>% head(5) %>% select(Character.Name, word)
+
+
+```
+```{r, echo=TRUE}
+
+
+# Top 15 characters with the most dialogues
+scripts %>% 
+  # prepare the table
+  count(Character.Name) %>%
+  arrange(desc(n)) %>% 
+  slice(1:15) %>%
+  
+  # the plot
+  ggplot(aes(x=reorder(Character.Name, n), y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend=F) +
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="#58D68D", high="#239B56") +
+  labs(x="Character", y="Number of dialogues", title="Most talkative in Rick&Morty") +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r, echo=TRUE}
+tokens %>% 
+  # append the bing sentiment and prepare the data
+  inner_join(bing, "word") %>%
+  count(word, sentiment, sort=T) %>% 
+  acast(word ~ sentiment, value.var = "n", fill=0) %>% 
+  
+  # wordcloud
+  comparison.cloud(colors=c("#991D1D", "#327CDE"), max.words = 100)
+
+
+```
+
+```{r, echo=TRUE}
+
+scripts1 = scripts[scripts$Season.No == 1,]
+scripts2 = scripts[scripts$Season.No == 2,]
+scripts3 = scripts[scripts$Season.No == 3,]
+
+tokens1 <- scripts1 %>% 
+  mutate(dialogue = as.character(scripts1$Dialog)) %>% 
+  unnest_tokens(word, dialogue)
+
+tokens2 <- scripts2 %>% 
+  mutate(dialogue = as.character(scripts2$Dialog)) %>% 
+  unnest_tokens(word, dialogue)
+
+tokens3 <- scripts3 %>% 
+  mutate(dialogue = as.character(scripts3$Dialog)) %>% 
+  unnest_tokens(word, dialogue)
+
+tokens1 %>% 
+  # Count how many word per value
+  inner_join(afinn, "word") %>% 
+  count(value, sort=T) %>%
+  
+  # Plot
+  ggplot(aes(x=value, y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend = F, width = 0.5) +
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="#85C1E9", high="#3498DB") +
+  scale_x_continuous(breaks=seq(-5, 5, 1)) +
+  labs(x="Score", y="Frequency", title="Season 1Word count distribution over intensity of sentiment: Neg -> Pos") +
+  theme_bw()
+
+tokens2 %>% 
+  # Count how many word per value
+  inner_join(afinn, "word") %>% 
+  count(value, sort=T) %>%
+  
+  # Plot
+  ggplot(aes(x=value, y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend = F, width = 0.5) +
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="#85C1E9", high="#3498DB") +
+  scale_x_continuous(breaks=seq(-5, 5, 1)) +
+  labs(x="Score", y="Frequency", title="Season 2 Word count distribution over intensity of sentiment: Neg -> Pos") +
+  theme_bw()
+
+tokens3 %>% 
+  # Count how many word per value
+  inner_join(afinn, "word") %>% 
+  count(value, sort=T) %>%
+  
+  # Plot
+  ggplot(aes(x=value, y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend = F, width = 0.5) +
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="#85C1E9", high="#3498DB") +
+  scale_x_continuous(breaks=seq(-5, 5, 1)) +
+  labs(x="Score", y="Frequency", title="Season 3 Word count distribution over intensity of sentiment: Neg -> Pos") +
+  theme_bw()
+```
+
+```{r, echo=TRUE}
+affin_tok1 <- tokens1 %>% 
+  # Count how many word per value
+  inner_join(afinn, "word")
+
+affin_tok2 <- tokens2 %>% 
+  # Count how many word per value
+  inner_join(afinn, "word") 
+
+affin_tok3 <- tokens3 %>% 
+  # Count how many word per value
+  inner_join(afinn, "word")
+
+
+episodes <- c(1,2,3,4,5,6,7,8,9,10)
+
+list1 = c()
+list2 = c()
+list3 = c()
+for (x in 1:10) {
+  m1 = mean(affin_tok1[affin_tok1$Episode.No == x,]$value)
+  list1 = c(list1, m1)
+}
+
+for (x in 1:10) {
+  m2 = mean(affin_tok2[affin_tok2$Episode.No == x,]$value)
+  list2 = c(list2, m2)
+}
+
+for (x in 1:10) {
+  m3 = mean(affin_tok3[affin_tok3$Episode.No == x,]$value)
+  list3 = c(list3, m3)
+}
+
+epdf <- data.frame(episodes, list1, list2, list3)
+
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
