@@ -1,6 +1,6 @@
 ---
 title: "Rick and Morty"
-author: "Brian"
+author: "DS Spr24 Group 6"
 date: "2024-02-06"
 output: html_document
 ---
@@ -65,10 +65,11 @@ scripts = scripts %>% rename(Index = "index",
 
 
 ```{r, echo = TRUE}
-s1lines = nrow(scripts[scripts$Season.No == 1,])
+s1lines = nrow(scripts[scripts$Season.No == 1,]) #getting the number of lines in each season
 s2lines = nrow(scripts[scripts$Season.No == 2,])
 s3lines = nrow(scripts[scripts$Season.No == 3,])
 
+#building dataframe for plotting
 lines = list(s1lines, s2lines, s3lines)
 seasons = list("season 1", "Season 2", "Season 3")
 
@@ -76,12 +77,13 @@ linesdf <- data.frame(unlist(lines), unlist(seasons))
 df = as.data.frame(linesdf)
 names(df) = c("Lines", "Season Number")
 
-p<-ggplot(data=scripts, aes(x=`Season.No`, y=nrow(scripts), color=scripts$Character.Name)) + geom_bar(stat="identity") + ggtitle("Lines per Season")
+#plotting number of lines in each season
+p<-ggplot(data=scripts, aes(x=`Season.No`, y=nrow(scripts))) + geom_bar(stat="identity") + ggtitle("Lines per Season") + xlab("Season #") + ylab("# of Lines")
 ```
 
 ```{r}
 
-
+#cleaning lines, pulled from https://www.kaggle.com/code/andradaolteanu/sentiment-analysis-rick-and-morty-scripts/notebook
 cleanCorpus <- function(text){
   # punctuation, whitespace, lowercase, numbers
   text.tmp <- tm_map(text, removePunctuation)
@@ -101,105 +103,16 @@ cleanCorpus <- function(text){
 
 ```
 
-```{r}
-frequentTerms <- function(text){
-  
-  # create the matrix
-  s.cor <- VCorpus(VectorSource(text))
-  s.cor.cl <- cleanCorpus(s.cor)
-  s.tdm <- TermDocumentMatrix(s.cor.cl)
-  s.tdm <- removeSparseTerms(s.tdm, 0.999)
-  m <- as.matrix(s.tdm)
-  word_freqs <- sort(rowSums(m), decreasing = T)
-  
-  # change to dataframe
-  dm <- data.frame(word=names(word_freqs), freq=word_freqs)
-  
-  return(dm)
-}
-
-# Trigram tokenizer
-tokenizer_3 <- function(x){
-  NGramTokenizer(x, Weka_control(min=3, max=3))
-}
-
-# Trigram function 
-frequentTrigrams <- function(text){
-
-  s.cor <- VCorpus(VectorSource(text))
-  s.cor.cl <- cleanCorpus(s.cor)
-  s.tdm <- TermDocumentMatrix(s.cor.cl, control=list(tokenize=tokenizer_3))
-  s.tdm <- removeSparseTerms(s.tdm, 0.999)
-  m <- as.matrix(s.tdm)
-  word_freqs <- sort(rowSums(m), decreasing=T)
-  dm <- data.frame(word=names(word_freqs), freq=word_freqs)
-  
-  return(dm)
-}
-
-tokenizer_2 <- function(x){
-  NGramTokenizer(x, Weka_control(min=2, max=2))
-}
-
-# Bigram function 
-frequentBigrams <- function(text){
-
-  s.cor <- VCorpus(VectorSource(text))
-  s.cor.cl <- cleanCorpus(s.cor)
-  s.tdm <- TermDocumentMatrix(s.cor.cl, control=list(tokenize=tokenizer_2))
-  s.tdm <- removeSparseTerms(s.tdm, 0.999)
-  m <- as.matrix(s.tdm)
-  word_freqs <- sort(rowSums(m), decreasing=T)
-  dm <- data.frame(word=names(word_freqs), freq=word_freqs)
-  
-  return(dm)
-}
 
 
-
-tokens %>% head(5) %>% select(Character.Name, word)
-
-
-```
-```{r, echo=TRUE}
-
-
-# Top 15 characters with the most dialogues
-scripts %>% 
-  # prepare the table
-  count(Character.Name) %>%
-  arrange(desc(n)) %>% 
-  slice(1:15) %>%
-  
-  # the plot
-  ggplot(aes(x=reorder(Character.Name, n), y=n)) +
-  geom_bar(stat="identity", aes(fill=n), show.legend=F) +
-  geom_label(aes(label=n)) +
-  scale_fill_gradient(low="#58D68D", high="#239B56") +
-  labs(x="Character", y="Number of dialogues", title="Most talkative in Rick&Morty") +
-  coord_flip() +
-  theme_bw()
-```
 
 ```{r, echo=TRUE}
-tokens %>% 
-  # append the bing sentiment and prepare the data
-  inner_join(bing, "word") %>%
-  count(word, sentiment, sort=T) %>% 
-  acast(word ~ sentiment, value.var = "n", fill=0) %>% 
-  
-  # wordcloud
-  comparison.cloud(colors=c("#991D1D", "#327CDE"), max.words = 100)
-
-
-```
-
-```{r, echo=TRUE}
-
+#getting all lines from each season
 scripts1 = scripts[scripts$Season.No == 1,]
 scripts2 = scripts[scripts$Season.No == 2,]
 scripts3 = scripts[scripts$Season.No == 3,]
 
+#tokenizing each season - "Look I'm a pickle"  -> "I'm" and a are removed from previous step, tokens = {look, pickle}
 tokens1 <- scripts1 %>% 
   mutate(dialogue = as.character(scripts1$Dialog)) %>% 
   unnest_tokens(word, dialogue)
@@ -256,40 +169,173 @@ tokens3 %>%
 ```
 
 ```{r, echo=TRUE}
+#assigning afinn scores to each season
 affin_tok1 <- tokens1 %>% 
-  # Count how many word per value
   inner_join(afinn, "word")
 
 affin_tok2 <- tokens2 %>% 
-  # Count how many word per value
   inner_join(afinn, "word") 
 
 affin_tok3 <- tokens3 %>% 
-  # Count how many word per value
   inner_join(afinn, "word")
 
-
+#building dataframe of afinn for each season for plotting
 episodes <- c(1,2,3,4,5,6,7,8,9,10)
 
-list1 = c()
-list2 = c()
-list3 = c()
+season1 = c()
+season2 = c()
+season3 = c()
 for (x in 1:10) {
-  m1 = mean(affin_tok1[affin_tok1$Episode.No == x,]$value)
-  list1 = c(list1, m1)
+  m1 = mean(affin_tok1[affin_tok1$Episode.No == x,]$value) #storing the mean afinn value of a season in m1
+  season1 = c(season1, m1)                                 #adding m1 to the list that will be added to the dataframe
 }
 
 for (x in 1:10) {
   m2 = mean(affin_tok2[affin_tok2$Episode.No == x,]$value)
-  list2 = c(list2, m2)
+  season2 = c(season2, m2)
 }
 
 for (x in 1:10) {
   m3 = mean(affin_tok3[affin_tok3$Episode.No == x,]$value)
-  list3 = c(list3, m3)
+  season3 = c(season3, m3)
 }
 
-epdf <- data.frame(episodes, list1, list2, list3)
+epdf <- data.frame(episodes, season1, season2, season3)
+#dataframe
+print(epdf)
 
 ```
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+rm(list=ls())
+```
+
+
+Import Data
+```{r}
+
+dialogue <- read.csv("RickAndMortyScripts.xls")
+
+bing <- read.csv("Bing.xls")
+
+afinn <- read.csv("Afinn.xls")
+
+nrc <- read.csv("NRC.xls")
+
+```
+
+Define a function to clean the text:
+```{r}
+
+cleanCorpus <- function(text){
+  # deal with punctuation, whitespace, lowercase, numbers
+  text.tmp <- tm_map(text, removePunctuation)
+  text.tmp <- tm_map(text.tmp, stripWhitespace)
+  text.tmp <- tm_map(text.tmp, content_transformer(tolower))
+  text.tmp <- tm_map(text.tmp, removeNumbers)
+  
+  # removes stopwords
+  stopwords_remove <- c(stopwords("en"), c("thats","weve","hes","theres","ive","im", "will","can","cant","dont","youve","us","youre","youll","theyre","whats","didnt"))
+  text.tmp <- tm_map(text.tmp, removeWords, stopwords_remove)
+
+  return(text.tmp)
+}
+
+```
+
+## Exploratory Data Analysis
+
+Which characters talk the most?
+```{r}
+# Top 10 characters with the most dialogues
+dialogue %>% 
+  # prepare the table
+  count(name) %>%
+  arrange(desc(n)) %>% 
+  slice(1:10) %>%
+  
+  # the plot
+  ggplot(aes(x=reorder(name, n), y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend=F) +
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="#58D68D", high="#239B56") +
+  labs(x="Character", y="Number of dialogues", title="Most talkative in Rick And Morty") +
+  coord_flip() +
+  theme_bw()
+```
+
+What words are spoken most frequently?
+```{r}
+# Splitting up the individual tokens (words and punctuation marks)
+tokens <- dialogue %>% 
+  mutate(lines = as.character(dialogue$line)) %>% 
+  unnest_tokens(word, lines)
+
+# Check the output - yep, looks good!
+tokens %>% head(5) %>% select(name, word)
+
+# Count the number of times each word is spoken
+tokens_count <- tokens %>% 
+  # append the bing list bc this will take out the non-sentiment words that are in tokens that aren't in bing, like "I" or "it". we don't care about those
+  #inner_join(bing, "word") %>%
+  count(word, sort = TRUE)
+
+# plot wordcloud of top 100 words
+wordcloud(tokens_count$word[1:100], tokens_count$n[1:100])
+
+# Remove neutral words and THEN count the number of times each word is spoken
+tokens_count <- tokens %>% 
+  # append the bing list bc this will take out the non-sentiment words that are in tokens that aren't in bing, like "I" or "it". we don't care about those
+  inner_join(bing, "word") %>%
+  count(word, sort = TRUE)
+
+# now plot wordcloud of top words that contain *sentiment*
+wordcloud(tokens_count$word, tokens_count$n)
+```
+
+Get average Afinn score for each season
+
+```{r}
+
+afinn_tok <- tokens %>% 
+  # get afinn score for each word
+  inner_join(afinn, "word")
+  # select season 1 lines
+
+s1 <- afinn_tok[afinn_tok$season.no. == 1, ]
+s2 <- afinn_tok[afinn_tok$season.no. == 2, ]
+s3 <- afinn_tok[afinn_tok$season.no. == 3, ]
+
+s1_mean <- mean(s1$value)
+s2_mean <- mean(s2$value)
+s3_mean <- mean(s3$value)
+
+s1_sd <- sd(s1$value)
+s2_sd <- sd(s2$value)
+s3_sd <- sd(s3$value)
+
+means <- c(s1_mean, s2_mean, s3_mean)
+sds <- c(s1_sd, s2_sd, s3_sd)
+
+# compile the mean and std dev data into data table
+season_sentiment_data <- data.frame(season = c(1,2,3), mean = means, std_dev = sds)
+
+# plot the mean sentiments for each season
+p<-ggplot(data=season_sentiment_data, aes(x=season, y=mean)) +
+  geom_bar(stat="identity") +
+  labs( x = "Season", y = "Mean Sentiment Score")
+p
+
+```
+
+Do ANOVA hypothesis testing on season means
+
+```{r}
+
+# then perform ANOVA
+one.way <- aov(mean ~ season, data = season_sentiment_data)
+summary(one.way)
+
+```
+
+The p value of the one-way ANOVA is 0.534 which is larger than the alpha of 0.05. We do not find a significantly significant difference between the average sentiment of each season. Therefore, we reject our hypothesis that Rick and Morty's average season sentiment gets more negative as time goes on.
