@@ -11,4 +11,4 @@ Episode,1,0.23265306,-0.5267176,-0.07058824
 ,9,NaN,NaN,NaN
 ,10,NaN,-0.3333333,NaN
 
-NaN indicates episode had no lines, any number indicates the afinn score from -5 to 5
+NaN indicates episode had no lines, any number indicates the afinn score from -5 to 5,,,,
