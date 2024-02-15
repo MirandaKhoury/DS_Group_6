@@ -5,9 +5,9 @@ This is the repository for the first project of UVA DS 4002 project group 6: Mir
 Software used: We used the coding language R and IDE software RStudio to perform sentiment analysis on our scripts dataframe using the Bing, Afinn, and NRC dataframes, as well as to run a one-way ANOVA test to compare the mean sentiment in each season.  
 
 Add-on packages installed with software:
-library(readr)
-library(tidyverse)
-library(tm)
+- library(readr)
+- library(tidyverse)
+- library(tm)
 library(wordcloud)
 library(wordcloud2)
 library(tidytext)
