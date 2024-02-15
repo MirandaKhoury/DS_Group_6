@@ -38,6 +38,7 @@ library(radarchart)
 
 Import Data
 ```{r}
+# note that you will need to change these paths to wherever you have stored the data files on your own device.
 
 dialogue <- read.csv("C:/Users/mrkho/OneDrive/Documents/4th year/DS-4002/r_m_scripts/RickAndMortyScripts.csv")
 
