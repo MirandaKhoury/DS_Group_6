@@ -5,6 +5,7 @@ date: "2024-02-06"
 output: html_document
 ---
 
+## Initial Setup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Load libraries
@@ -36,10 +37,9 @@ library(circlize)
 library(radarchart)
 ```
 
-## R Markdown
+## Import Data
 
-
-```{r cars}
+```{r}
 
 
 # Read the data 
