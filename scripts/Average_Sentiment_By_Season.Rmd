@@ -5,6 +5,8 @@ date: "2024-02-06"
 output: html_document
 ---
 
+This R Markdown file allows for the reading in and sentiment analysis of Rick and Morty scripts, although the code could be applied to any csv of text lines. The data are read in, and several functions for the cleaning of textual data are instantiated. Then, the file allows for exploratory data analysis; namely, it provides code for determining the most talkative character in the scripts and for determining the most commonly spoken words. Finally, the average Afinn sentiment score is calculated for each season, and a one-way ANOVA is used to determine whether there is a statistically significant difference in the average sentiment scores across seasons.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
