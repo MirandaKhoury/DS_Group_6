@@ -8,21 +8,21 @@ Add-on packages installed with software:
 - library(readr)
 - library(tidyverse)
 - library(tm)
-library(wordcloud)
-library(wordcloud2)
-library(tidytext)
-library(textdata)
-library(reshape2)
-library(RWeka)
-library(knitr)
-library(gridExtra)
-library(grid)
-library(magick)
-library(igraph)
-library(ggraph)
-library(ggsci)
-library(circlize)
-library(radarchart)
+- library(wordcloud)
+- library(wordcloud2)
+- library(tidytext)
+- library(textdata)
+- library(reshape2)
+- library(RWeka)
+- library(knitr)
+- library(gridExtra)
+- library(grid)
+- library(magick)
+- library(igraph)
+- library(ggraph)
+- library(ggsci)
+- library(circlize)
+- library(radarchart)
 
 Platform: We used the platform Windows for our project. 
 
@@ -31,26 +31,26 @@ Platform: We used the platform Windows for our project.
 ## Section 2: Map of documentation
  
 Data folder:
-Affin.xls
-Bing.xls
-NRC.xls
-RickAndMortyScripts.xls
+- Affin.xls
+- Bing.xls
+- NRC.xls
+- RickAndMortyScripts.xls
 
 Output folder:
-Season1afinn.jpg
-Season2afinn.jpg
-Season3afinn.jpg
-episode_averages.csv
-exploratory_analysis_most_talkative_character.png
-linesperseason.jpg
-average_sentiment_by_season.png
-exploratory_analysis_most_used_nonneutral_words.png
-exploratory_analysis_most_used_words.png
-one_way_anova_results_summary.png
+- Season1afinn.jpg
+- Season2afinn.jpg
+- Season3afinn.jpg
+- episode_averages.csv
+- exploratory_analysis_most_talkative_character.png
+- linesperseason.jpg
+- average_sentiment_by_season.png
+- exploratory_analysis_most_used_nonneutral_words.png
+- exploratory_analysis_most_used_words.png
+- one_way_anova_results_summary.png
 
 
 Scripts folder:
-rickandmorty.Rmd
+- rickandmorty.Rmd
 
 
 
