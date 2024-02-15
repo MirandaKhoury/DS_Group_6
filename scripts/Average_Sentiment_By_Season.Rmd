@@ -1,0 +1,164 @@
+---
+title: "R_M_Sentiment_Analysis"
+author: "Miranda Khoury"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Import libraries
+```{r}
+
+library(readr)
+library(tidyverse)
+library(tm)
+library(wordcloud)
+library(wordcloud2)
+library(tidytext)
+library(textdata)
+library(reshape2)
+library(RWeka)
+library(knitr)
+library(gridExtra)
+library(grid)
+library(magick)
+library(igraph)
+library(ggraph)
+library("ggsci")
+library(devtools)
+library(circlize)
+library(radarchart)
+
+```
+
+Import Data
+```{r}
+
+dialogue <- read.csv("C:/Users/mrkho/OneDrive/Documents/4th year/DS-4002/r_m_scripts/RickAndMortyScripts.csv")
+
+bing <- read.csv("C:/Users/mrkho/OneDrive/Documents/4th year/DS-4002/sentiment_dictionary/Bing.csv")
+
+afinn <- read.csv("C:/Users/mrkho/OneDrive/Documents/4th year/DS-4002/sentiment_dictionary/Afinn.csv")
+
+nrc <- read.csv("C:/Users/mrkho/OneDrive/Documents/4th year/DS-4002/sentiment_dictionary/NRC.csv")
+
+```
+
+Define a function to clean the text:
+```{r}
+
+cleanCorpus <- function(text){
+  # deal with punctuation, whitespace, lowercase, numbers
+  text.tmp <- tm_map(text, removePunctuation)
+  text.tmp <- tm_map(text.tmp, stripWhitespace)
+  text.tmp <- tm_map(text.tmp, content_transformer(tolower))
+  text.tmp <- tm_map(text.tmp, removeNumbers)
+  
+  # removes stopwords
+  stopwords_remove <- c(stopwords("en"), c("thats","weve","hes","theres","ive","im", "will","can","cant","dont","youve","us","youre","youll","theyre","whats","didnt"))
+  text.tmp <- tm_map(text.tmp, removeWords, stopwords_remove)
+
+  return(text.tmp)
+}
+
+```
+
+## Exploratory Data Analysis
+
+Which characters talk the most?
+```{r}
+# Top 10 characters with the most dialogues
+dialogue %>% 
+  # prepare the table
+  count(name) %>%
+  arrange(desc(n)) %>% 
+  slice(1:10) %>%
+  
+  # the plot
+  ggplot(aes(x=reorder(name, n), y=n)) +
+  geom_bar(stat="identity", aes(fill=n), show.legend=F) +
+  geom_label(aes(label=n)) +
+  scale_fill_gradient(low="#58D68D", high="#239B56") +
+  labs(x="Character", y="Number of dialogues", title="Most talkative in Rick And Morty") +
+  coord_flip() +
+  theme_bw()
+```
+
+What words are spoken most frequently?
+```{r}
+# Splitting up the individual tokens (words and punctuation marks)
+tokens <- dialogue %>% 
+  mutate(lines = as.character(dialogue$line)) %>% 
+  unnest_tokens(word, lines)
+
+# Check the output - yep, looks good!
+tokens %>% head(5) %>% select(name, word)
+
+# Count the number of times each word is spoken
+tokens_count <- tokens %>% 
+  # append the bing list bc this will take out the non-sentiment words that are in tokens that aren't in bing, like "I" or "it". we don't care about those
+  #inner_join(bing, "word") %>%
+  count(word, sort = TRUE)
+
+# plot wordcloud of top 100 words
+wordcloud(tokens_count$word[1:100], tokens_count$n[1:100])
+
+# Remove neutral words and THEN count the number of times each word is spoken
+tokens_count <- tokens %>% 
+  # append the bing list bc this will take out the non-sentiment words that are in tokens that aren't in bing, like "I" or "it". we don't care about those
+  inner_join(bing, "word") %>%
+  count(word, sort = TRUE)
+
+# now plot wordcloud of top words that contain *sentiment*
+wordcloud(tokens_count$word, tokens_count$n)
+```
+
+Get average Afinn score for each season
+
+```{r}
+
+afinn_tok <- tokens %>% 
+  # get afinn score for each word
+  inner_join(afinn, "word")
+  # select season 1 lines
+
+s1 <- afinn_tok[afinn_tok$season.no. == 1, ]
+s2 <- afinn_tok[afinn_tok$season.no. == 2, ]
+s3 <- afinn_tok[afinn_tok$season.no. == 3, ]
+
+s1_mean <- mean(s1$value)
+s2_mean <- mean(s2$value)
+s3_mean <- mean(s3$value)
+
+s1_sd <- sd(s1$value)
+s2_sd <- sd(s2$value)
+s3_sd <- sd(s3$value)
+
+means <- c(s1_mean, s2_mean, s3_mean)
+sds <- c(s1_sd, s2_sd, s3_sd)
+
+# compile the mean and std dev data into data table
+season_sentiment_data <- data.frame(season = c(1,2,3), mean = means, std_dev = sds)
+
+# plot the mean sentiments for each season
+p<-ggplot(data=season_sentiment_data, aes(x=season, y=mean)) +
+  geom_bar(stat="identity") +
+  labs( x = "Season", y = "Mean Sentiment Score")
+p
+
+```
+
+Do ANOVA hypothesis testing on season means
+
+```{r}
+
+# then perform ANOVA
+one.way <- aov(mean ~ season, data = season_sentiment_data)
+summary(one.way)
+
+```
+
+The p value of the one-way ANOVA is 0.534 which is larger than the alpha of 0.05. We do not find a significantly significant difference between the average sentiment of each season. Therefore, we reject our hypothesis that Rick and Morty's average season sentiment gets more negative as time goes on.
