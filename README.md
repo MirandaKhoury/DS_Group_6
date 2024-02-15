@@ -1,6 +1,6 @@
 This is the repository for the first project of UVA DS 4002 project group 6: Miranda Khoury, Georgia Davidson, and Brian Bippert. This project involves conducting sentiment analysis on Rick and Morty dialogue to answer the research question: does the average sentiment in each season of Rick and Morty become more negative over time/ni later seasons?
 
-Section 1: Software and platform
+## Section 1: Software and platform
 
 Software used: We used the coding language R and IDE software RStudio to perform sentiment analysis on our scripts dataframe using the Bing, Afinn, and NRC dataframes, as well as to run a one-way ANOVA test to compare the mean sentiment in each season.  
 
@@ -28,7 +28,7 @@ Platform: We used the platform Windows for our project.
 
 
 
-Section 2: Map of documentation
+## Section 2: Map of documentation
  
 Data folder:
 Affin.xls
@@ -50,12 +50,11 @@ one_way_anova_results_summary.png
 
 
 Scripts folder:
-Average_Sentiment_By_Season.Rmd
 rickandmorty.Rmd
 
 
 
-Section 3: Instructions for reproducing results
+## Section 3: Instructions for reproducing results
 
 To replicate our results, first download all four of the .xls files in the Data folder. If not already installed, install R and RStudio. You can download R by selecting one of the mirrors from this site (https://cran.r-project.org/mirrors.html) and selecting “Download R for [your operating system]”. You can download RStudio from this site (https://posit.co/download/rstudio-desktop/).
 
